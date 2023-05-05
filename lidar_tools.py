@@ -6,52 +6,52 @@ import matplotlib.pyplot as plt
 import rasterstats as rs
 import seaborn as sns
 
-def calc_lidar_chm_stats(plots_path, chm_path):
-    """
-    Load lidar CHM centroids and buffer
-    """
-    plots_gdf = gpd.read_file(plots_path)
-    plots_gdf.geometry = plots_gdf.geometry.buffer(distance=20)
 
-    # Get zonal statistics
-    chm_stats = rs.zonal_stats(
-        plots_gdf,
-        chm_path,
-        stats=["mean", "max"],
-        nodata=0,
-        copy_properties=True,
-        geojson_out=True)
 
-    chm_stats_gdf = gpd.GeoDataFrame.from_features(chm_stats)
-    chm_stats_gdf.rename(columns={"max": "lidar_max", "mean": "lidar_mean"},
-                            inplace=True)
-        
-    return(chm_stats_gdf)
-
-def calc_insitu_height_stats(insitu_path):
-    """
-    Load insitu data and calculate max and mean
-    """
-    insitu_df = (
-        pd.read_csv(insitu_path)
-        .groupby("plotid")
-        .stemheight
-        .agg(["max", "mean"])
-        .rename(columns={"max": "insitu_max", "mean": "insitu_mean"})
-    )
-
-    return(insitu_df)
-
-def calc_height_stats(chm_stats_gdf, plots_path, chm_path, insitu_path, id_colname="Plot_ID"):
+def calc_height_stats(plots_path, chm_path, insitu_path, id_colname="Plot_ID"):
     """
     Merge LiDAR and insitu stats into one df
     """
 
-    
+    def calc_lidar_chm_stats(plots_path, chm_path):
+        """
+        Load lidar CHM centroids and buffer
+        """
+        plots_gdf = gpd.read_file(plots_path)
+        plots_gdf.geometry = plots_gdf.geometry.buffer(distance=20)
 
+        # Get zonal statistics
+        chm_stats = rs.zonal_stats(
+            plots_gdf,
+            chm_path,
+            stats=["mean", "max"],
+            nodata=0,
+            copy_properties=True,
+            geojson_out=True)
+
+        chm_stats_gdf = gpd.GeoDataFrame.from_features(chm_stats)
+        chm_stats_gdf.rename(columns={"max": "lidar_max", "mean": "lidar_mean"},
+                                inplace=True)
+            
+        return(chm_stats_gdf)
+
+    def calc_insitu_height_stats(insitu_path):
+        """
+        Load insitu data and calculate max and mean
+        """
+        insitu_df = (
+            pd.read_csv(insitu_path)
+            .groupby("plotid")
+            .stemheight
+            .agg(["max", "mean"])
+            .rename(columns={"max": "insitu_max", "mean": "insitu_mean"})
+        )
+
+        return(insitu_df)
+    
     # Load centroids and buffer
-    # chm_stats_gdf = calc_lidar_chm_stats(plots_path,
-    #                                       chm_path)
+    chm_stats_gdf = calc_lidar_chm_stats(plots_path,
+                                          chm_path)
     
     # Load insitu data and get max, mean
     insitu_df = calc_insitu_height_stats(insitu_path)
